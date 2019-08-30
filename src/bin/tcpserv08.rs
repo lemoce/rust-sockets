@@ -27,8 +27,11 @@ struct Args {
     arg_porta: u16,
 }
 
+// nesse caso não há problemas entre big-endian e little-endian
+// porque é convertido como utf8, nesse caso o compilador resolve
+// o problema relatado no livro The Sockets Networking API
 fn handle_stream(stream: &mut TcpStream) -> std::io::Result<()> {
-    let mut buffer = String::new();
+    let mut buffer = String::new(); //há um malloc operação de heap
     let mut cloned_stream = stream.try_clone().unwrap();
     let mut reader = BufReader::new(stream);
 
