@@ -43,6 +43,7 @@ fn handle_stream(stream: &mut TcpStream) -> std::io::Result<()> {
             let soma = numeros.iter().fold(0, |acc, x| acc + x);
 
             writeln!(cloned_stream, "{}", soma)?;
+            buffer.clear();
         }
         else { break; }
     }
