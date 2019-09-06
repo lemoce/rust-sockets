@@ -1,12 +1,13 @@
-extern crate libc;
+extern crate nix;
 
-use std::io::prelude::*;
+use std::io::{BufReader, BufRead, Write};
 use std::net::{TcpListener, TcpStream};
+use std::os::unix::io::AsRawFd;
 use std::str;
 
 use docopt::Docopt;
+use nix::sys::select;
 use serde::Deserialize;
-
 
 const USAGE: &'static str = "
 Servidor de echo deixando processos zumbis
@@ -24,39 +25,86 @@ struct Args {
     arg_porta: u16,
 }
 
-fn handle_stream(stream: &mut TcpStream) -> std::io::Result<()> {
-    let mut buffer = [0u8; 1028];
-
-    while stream.read(&mut buffer)? != 0 {
-        write!(stream, "{}", str::from_utf8(&buffer).map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?)?;
-    }
-
-    Ok(())
-}
-
 fn main() {
     let args: Args = Docopt::new(USAGE)
         .and_then(|d| d.deserialize())
         .unwrap_or_else(|e| e.exit());
-
+    
     let listener = TcpListener::bind(format!("{}:{}", args.arg_ip, args.arg_porta)).unwrap();
 
-    for stream in listener.incoming() {
-        match stream {
-            Ok(mut stream) => {
-                if unsafe { libc::fork() } == 0 {
+    let mut clients: Vec<TcpStream> = Vec::new();
 
-                    drop(listener);
-                    handle_stream(&mut stream).unwrap();
+    let mut allset = select::FdSet::new();
+    allset.clear();
 
-                    std::process::exit(0);
+    allset.insert(listener.as_raw_fd());
+
+    loop {
+        let mut rset = allset.clone();
+        println!("Bloqueado no select");
+        let mut nready = select::select(None, Some(&mut rset), None, None, None).unwrap();
+        println!("Liberado no select");
+
+        
+        if rset.contains(listener.as_raw_fd()) {
+            let new_client = listener.accept().unwrap().0;
+            let client_fd = new_client.as_raw_fd();
+
+            if select::FD_SETSIZE > clients.len() {
+                println!("Recebi um cliente");
+                clients.push(new_client);
+            } else {
+                println!("too many clients");
+                std::process::exit(1);
+            }
+
+            allset.insert(client_fd);
+            
+            nready = nready - 1;
+            if nready <= 0 {
+                continue;
+            }
+        }
+
+        println!("antes do for");
+        for id in 0 .. clients.len() - 1  {
+
+            let client = clients.get_mut(id).unwrap();
+            
+            println!("Clients.iter_mut");
+
+            let mut buffer = String::new();
+            if rset.contains(client.as_raw_fd()) {
+
+                let client_socket = client.try_clone().unwrap();
+                let mut reader = BufReader::new(client_socket);
+
+                match reader.read_line(&mut buffer) {
+                    Ok(0) => {
+                        println!("Close client");
+                        let client_fd = client.as_raw_fd();
+                        
+                        drop(client);
+                        allset.remove(client_fd);
+                    },
+                    Ok(_) => {
+                        println!("Received => ({})", buffer);
+                        write!(*client, "{}", buffer).unwrap();
+                    }
+                    Err(e) => {
+                        println!("Some strange error: {:?}", e);
+                    }
                 }
-                drop(stream);
-            },
-            Err(e) => {
-                println!("Error: {:?}", e);
-            },
+
+                buffer.clear();
+                
+                nready = nready - 1;
+                if nready <= 0 {
+                    break;
+                }
+                
+            }
         }
     }
-
+    
 }
