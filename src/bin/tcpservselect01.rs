@@ -41,9 +41,7 @@ fn main() {
 
     loop {
         let mut rset = allset.clone();
-        println!("Bloqueado no select");
         let mut nready = select::select(None, Some(&mut rset), None, None, None).unwrap();
-        println!("Liberado no select");
 
         
         if rset.contains(listener.as_raw_fd()) {
@@ -51,8 +49,7 @@ fn main() {
             let client_fd = new_client.as_raw_fd();
 
             if select::FD_SETSIZE > clients.len() {
-                println!("Recebi um cliente");
-                clients.push(new_client);
+                clients.insert(0, new_client);
             } else {
                 println!("too many clients");
                 std::process::exit(1);
@@ -66,12 +63,14 @@ fn main() {
             }
         }
 
-        println!("antes do for");
-        for id in 0 .. clients.len() - 1  {
+        for id in 0 .. clients.len() {
 
-            let client = clients.get_mut(id).unwrap();
+            let client = match clients.get_mut(id) {
+	        Some(client) => client,
+		None => break,
+	    };
             
-            println!("Clients.iter_mut");
+            print!("{} ", id);
 
             let mut buffer = String::new();
             if rset.contains(client.as_raw_fd()) {
@@ -84,7 +83,7 @@ fn main() {
                         println!("Close client");
                         let client_fd = client.as_raw_fd();
                         
-                        drop(client);
+                        let _gomi = clients.remove(id);
                         allset.remove(client_fd);
                     },
                     Ok(_) => {
