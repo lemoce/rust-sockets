@@ -11,10 +11,10 @@ use nix::unistd::{sysconf, SysconfVar};
 use serde::Deserialize;
 
 const USAGE: &'static str = "
-Servidor de echo deixando processos zumbis
+Servidor de echo utilizando poll de eventos
 
 Usage:
-  tcpserv01 <ip> <porta>
+  tcpservpoll01 <ip> <porta>
 
 Options:
   -h --help     Mostra essa tela
