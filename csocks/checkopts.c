@@ -10,18 +10,21 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <arpa/inet.h>	/* inet(3) functions */
 #include <netinet/in.h>	/* sockaddr_in{} and other Internet defns */
+#include <netinet/sctp.h>
 #include <netinet/tcp.h>
 
 #include <linux/udp.h>
 #include <linux/in.h>
 
-#include <arpa/inet.h>	/* inet(3) functions */
 
 #define	MAXLINE		4096	/* max text line length */
 #define	BUFFSIZE	8192	/* buffer size for reads and writes */
 
-#define SO_USELOOPBACK 0x0040
+#ifdef IPV6_V6ONLY
+#define IPV6
+#endif
 
 union val {
   int i_val;
@@ -63,7 +66,11 @@ struct sock_opts {
    { "SO_REUSEPORT",          0,                0,                      NULL },
 #endif
    { "SO_TYPE",               SOL_SOCKET,       SO_TYPE,                sock_str_int },
+#ifdef SO_USELOOPBACK
    { "SO_USELOOPBACK",        SOL_SOCKET,       SO_USELOOPBACK,         sock_str_flag },
+#else
+   { "SO_USELOOPBACK",        0,                0,                      NULL },
+#endif
    { "IP_TOS",                IPPROTO_IP,       IP_TOS,                 sock_str_int },
    { "IP_TTL",                IPPROTO_IP,       IP_TTL,                 sock_str_int },
 #ifdef	IPV6_DONTFRAG
