@@ -38,7 +38,7 @@ fn dg_cli(sock: &mut UdpSocket, peer: &String) -> std::io::Result<()> {
         if nread != 0 {
             sock.send_to(send_line.as_bytes(), server_addr)?;
 
-            let (serv_nread, peer_addr) = sock.recv_from(&mut recv_line)?;
+            let (_serv_nread, peer_addr) = sock.recv_from(&mut recv_line)?;
             if peer_addr != server_addr {
                 println!("reply from {} ignored", peer_addr);
             } else {
