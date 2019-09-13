@@ -10,7 +10,7 @@ use nix::sys::select;
 use serde::Deserialize;
 
 const USAGE: &'static str = "
-Servidor de echo deixando processos zumbis
+Servidor de echo utilizando select
 
 Usage:
   tcpserv01 <ip> <porta>

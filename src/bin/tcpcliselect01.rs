@@ -10,7 +10,7 @@ use nix::sys::select;
 use serde::Deserialize;
 
 const USAGE: &'static str = "
-Pegar a hora de um servidor
+Cliente de echo utilizando select
 
 Usage:
   tcpcliselect01 <ip>
