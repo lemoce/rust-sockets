@@ -1,7 +1,7 @@
 [package]
 name = "sockets"
 version = "0.1.0"
-authors = ["27190057897"]
+authors = ["lemoce"]
 edition = "2018"
 build = "build.rs"
 
@@ -12,7 +12,12 @@ docopt = "1"
 serde = { version = "1", features = ["derive"] }
 chrono = { version = "0.4", features = ["serde"] }
 libc = "0.2"
+
+[target.'cfg(unix)'.dependencies]
 nix = "0.15.0"
+
+[target.'cfg(windows)'.dependencies]
+winapi = "0.3"
 
 [build-dependencies]
 cmake = "0.1"
